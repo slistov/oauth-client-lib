@@ -1,12 +1,12 @@
 from fastapi import FastAPI, Depends
 from urllib.parse import urlencode
 
-from oauth_client_lib.domain import commands
-from oauth_client_lib.service_layer import unit_of_work
-from oauth_client_lib.service_layer import messagebus
+from ..domain import commands
+from ..service_layer import unit_of_work
+from ..service_layer import messagebus
 
-from oauth_client_lib.adapters import orm
-from oauth_client_lib import config
+from ..adapters import orm
+from ..config import config
 
 from . import schemas
 

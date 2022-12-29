@@ -6,9 +6,9 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.session import Session
 
 
-from oauth_client_lib import config
-from oauth_client_lib.adapters import repository
-from oauth_client_lib.service_layer import oauth_provider
+from .. import config
+from ..adapters import repository
+from ..service_layer import oauth_provider
 
 
 class AbstractUnitOfWork(abc.ABC):

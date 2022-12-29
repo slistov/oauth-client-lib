@@ -1,4 +1,4 @@
-from oauth_client_lib.domain import model
+from src.oauth_client_lib.domain import model
 
 
 def create_auth_data():

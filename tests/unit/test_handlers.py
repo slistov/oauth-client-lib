@@ -1,12 +1,12 @@
 # pylint: disable=no-self-use
 import pytest
-from oauth_client_lib.domain import commands
-from oauth_client_lib.service_layer import (
+from src.oauth_client_lib.domain import commands
+from src.oauth_client_lib.service_layer import (
     messagebus,
     exceptions
 )
 
-from oauth_client_lib.domain import model
+from src.oauth_client_lib.domain import model
 
 
 class TestAuthorization:

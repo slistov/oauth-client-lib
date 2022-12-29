@@ -10,7 +10,7 @@ from sqlalchemy import (
     FetchedValue
 )
 
-from oauth_client_lib.domain import model
+from ..domain import model
 from sqlalchemy import event
 
 from sqlalchemy.orm import registry, relationship

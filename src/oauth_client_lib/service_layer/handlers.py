@@ -3,7 +3,7 @@
 Команды и события генерируются в точках входа, см. /entrypoints
 """
 
-from oauth_client_lib.domain import model, commands
+from ..domain import model, commands
 
 from .unit_of_work import AbstractUnitOfWork
 from . import exceptions

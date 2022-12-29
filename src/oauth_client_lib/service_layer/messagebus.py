@@ -8,7 +8,7 @@
 from __future__ import annotations
 import logging
 from typing import List, Dict, Callable, Type, Union, TYPE_CHECKING
-from oauth_client_lib.domain import commands, events
+from ..domain import commands, events
 from . import handlers
 
 if TYPE_CHECKING:
