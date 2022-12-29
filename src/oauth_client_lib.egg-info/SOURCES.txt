@@ -1,9 +1,0 @@
-README.md
-setup.py
-src/oauth_client_lib/__init__.py
-src/oauth_client_lib/config.py
-src/oauth_client_lib.egg-info/PKG-INFO
-src/oauth_client_lib.egg-info/SOURCES.txt
-src/oauth_client_lib.egg-info/dependency_links.txt
-src/oauth_client_lib.egg-info/requires.txt
-src/oauth_client_lib.egg-info/top_level.txt
