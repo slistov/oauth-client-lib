@@ -1,1 +1,1 @@
-from .service_layer.oauth_provider import OAuthProvider
+from src.oauth_client_lib.service_layer.oauth_provider import OAuthProvider
