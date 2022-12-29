@@ -1,51 +1,62 @@
-from ..config import get_oauth_callback_URL, get_client_credentials
+from ..config import get_oauth_callback_URL, get_api_host
 from . import exceptions
 from ..domain import model
+
+from ..domain import commands
+from ..service_layer import unit_of_work
+from ..service_layer import messagebus
+
 from typing import List
 from urllib.parse import urlencode
 import aiohttp
+import requests
 
 
 class OAuthProvider:
     def __init__(
         self,
         name,
-        code_url,
-        token_url,
+        code_url=None,
+        token_url=None,
         scopes=[],
         public_keys_url='',
-        public_keys: List[dict] = [],
-        state=None
+        client_id='',
+        client_secret=''
     ):
         self.name = name
         self.code_url = code_url
         self.token_url = token_url
         self.scopes = scopes
         self.public_keys_url = public_keys_url
-        self.public_keys = public_keys
+        self.client_id = client_id
+        self.client_secret = client_secret
 
-    def get_authorize_uri(self, state: str):
+    async def get_authorize_uri(self, uow=None):
         assert self.code_url
-        params = self._get_authorize_params(state)
+        uow = unit_of_work.SqlAlchemyUnitOfWork() if not uow else uow
+        cmd = commands.CreateAuthorization("origin")
+        [state_code] = await messagebus.handle(cmd, uow)
+        return self._get_oauth_uri(state_code)
+
+    async def request_token(self, grant) -> requests.Response:
+        data = self._get_tokenRequest_data(grant=grant)
+        self.response = await self._post(
+            url=self.token_url,
+            data=data
+        )
+        return self.response
+
+    def _get_oauth_uri(self, state_code):
+        params = {
+            "response_type": "code",
+            "client_id": self.client_id,
+            "redirect_uri": get_oauth_callback_URL(),
+            "scope": self.scopes,
+            "state": state_code
+        }
         return f"{self.code_url}?{urlencode(params)}"
 
-    def _get_authorize_params(self, state: str):
-        client_id, _ = get_client_credentials()
-        return {
-            "response_type": "code",
-            "state": state,
-            "redirect_uri": get_oauth_callback_URL(),
-            "client_id": client_id
-        }
-
-    async def exchange_grant_for_token(self, code):
-        return await post_async(
-            url=self.token_url,
-            data=
-        )
-
-    @classmethod
-    def _get_tokenRequest_data(cls, grant):
+    def _get_tokenRequest_data(self, grant):
         if grant.grant_type == "authorization_code":
             data = {
                 "code": grant.code,
@@ -56,22 +67,20 @@ class OAuthProvider:
         else:
             raise exceptions.InvalidGrant(f"Unknown grant type {grant.grant_type} while requesting token")
 
-        client_id, client_secret = get_client_credentials()
+        assert self.client_id
+        assert self.client_secret
         data.update({
-            "client_id": client_id,
-            "client_secret": client_secret,
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
             "grant_type": grant.grant_type
         })
         return data
 
-    def _post(self, endpoint, data):
-        response = self.oauth.post(endpoint, data)
-        if response.status_code >= 400:
-            raise exceptions.OAuthError(
-                f"OAuth endpoint: {endpoint}, data sent: {data}, service responded: {response.text}"
-            )
-        self.response = response
-        return self.response
+    async def _post(self, url, data):
+        return await post_async(
+            url=url,
+            data=data
+        )
 
     def get_token(self) -> model.Token:
         return model.Token(self._get_token_str())
@@ -86,6 +95,7 @@ class OAuthProvider:
     def _get_grant_code(self):
         return self.response.json().get("refresh_token", None)
         # return self.response.get("refresh_token", None)
+
 
 async def post_async(url, data):
     async with aiohttp.ClientSession() as session:

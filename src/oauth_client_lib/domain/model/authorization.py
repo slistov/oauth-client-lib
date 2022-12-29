@@ -23,9 +23,11 @@ class Authorization:
         grants: List[Grant] = None,
         tokens: List[Token] = None,
         user: User = None,
-        is_active: bool = True
+        is_active: bool = True,
+        provider_name: str = 'Own'
     ):
         self.state = state
+        self.provider_name = provider_name
         self.grants = grants if grants else []
         self.tokens = tokens if tokens else []
         self.user = user if user else None

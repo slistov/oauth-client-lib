@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 Message = Union[commands.Command, events.Event]
 
 
-def handle(
+async def handle(
     message: Message,
     uow: unit_of_work.AbstractUnitOfWork,
 ):
@@ -35,7 +35,7 @@ def handle(
         if isinstance(message, events.Event):
             handle_event(message, queue, uow)
         elif isinstance(message, commands.Command):
-            cmd_result = handle_command(message, queue, uow)
+            cmd_result = await handle_command(message, queue, uow)
             results.append(cmd_result)
         else:
             raise Exception(f"{message} was not an Event or Command")
@@ -58,7 +58,7 @@ def handle_event(
             continue
 
 
-def handle_command(
+async def handle_command(
     command: commands.Command,
     queue: List[Message],
     uow: unit_of_work.AbstractUnitOfWork,
@@ -67,10 +67,10 @@ def handle_command(
     logger.debug("handling command %s", command)
     try:
         handler = COMMAND_HANDLERS[type(command)]
-        result = handler(command, uow=uow)
+        result = await handler(command, uow=uow)
         queue.extend(uow.collect_new_events())
         return result
-    except Exception:
+    except Exception as e:
         logger.exception("Exception handling command %s", command)
         raise
 

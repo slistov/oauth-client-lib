@@ -1,152 +1,22 @@
-# # BEGIN .env example
-# WEB_PORT=9000
-# DB_PORT=5432
-# DB_URI=postgresql://postgres:123456@localhost:${DB_PORT}/oauth_client_lib
-
-# CLIENT_ID=2325f6f2-6e5d-4b85-9be4-fb753480d971
-# CLIENT_SECRET=CjndHUMMJVGJfVExOSSsZu6fVsIjzGlzs6JpGFE8HW3
-
-# CLIENT_HOST=http://127.0.0.1:${WEB_PORT}
-
-# # Создавайте свой ключ, когда старый скомпрометирован
-# # to get a string like this run:
-# # openssl rand -hex 32
-# SECRET_KEY=42b518159ea4c42bfe267e712901f98d8d66f625eed00e8f4011b1e91348cc02
-
-# ORIGINS='["http://192.168.199.25:443", "https://oauth.itwarriors.ru"]'
-
-# OAUTH_URL=http://127.0.0.1:8000
-
-# # Test only
-# OAUTHLIB_INSECURE_TRANSPORT=True
-# # END .env example
-
-
-
 ###########################################
-#               ENDPOINTS                 #
+#    External OAuth services parameters   #
 ###########################################
-API:
-  BASE_URL: "/api"
-  OAUTH:
-    BASE_URL: "/oauth"
-    ENDPOINTS:
-      AUTHORIZE: "/authorize"
-      CALLBACK: "/callback"
-      USER_INFO: "/user_info"
-      TOKEN: "/token"
-  CRM: 
-    BASE_URL: "/crm"
-    ENDPOINTS:
-      LOGIN: "/login"
-      USERS: "/users"
-      EMPLOYEES: "/employees"
-  ENDPOINTS:
-    DESKS: "/desks"
-
-###########################################
-#                   CRM                   #
-###########################################
-CRM:
-  TIMEOUT: 50
-  URL: "http://crm.it-aces.com"
-  ENDPOINTS:
-    LOGIN:
-      URL: "/service/xservice.php"
-      BODY: {
-        "class": "WSUser",
-        "method": "login",
-        "params": {
-          # служебный аккаунт, для коннекта к CRM
-          "email": "icektor@gmail.com", 
-          "password": "qwerty123", 
-          "db_name": "pm"
-        }
-      }
-    # x_id - CRM resource id
-    USERS:
-      URL: "/service/xservice.php"
-      LIST_BODY: {
-        "class": "WSUser",
-        "method": "getList",
-        "params": {
-          "id": "132863348720780767",
-          "count": 1000,
-          "start": 0
-        }
-      }
-      DETAIL_BODY: {
-        "class": "WSUser",
-        "method": "getDetail",
-        "params": {
-          "id": "{user_id}"
-        }
-      }
-    EMPLOYEES:
-      URL: "/service/eservice.php"
-      LIST_BODY: {
-        "class": "WSPooled",
-        "method": "getList",
-        "params": {
-          "x_id": "132863348720780767",
-          "need_total": true,
-          "is_view": true,
-          "count": 1000,
-          "start": 0
-        }
-      }
-      DETAIL_BODY: {
-        "class": "WSPooled",
-        "method": "getDetail",
-        "params": {
-          "x_id": "118251385284843331", 
-          "id": "{user_id}", 
-          "need_meta":  false
-        }
-      }
-    
-###########################################
-#        OAuth service parameters         #
-###########################################
-OAUTH:
-  # URL: now in .env as OAUTH_URL
-  ENDPOINTS:
-    
-    # AUTHORIZE: ""
-    # TOKEN: "/api/oauth/token"
-    # TOKEN_INFO: "/api/oauth/token_info"
-    # USER_INFO: "/api/user_info"
-
-    AUTHORIZE: ""
-    TOKEN: "/api/oauth/token"
-    TOKEN_INFO: "/api/oauth/token_info"
-    USER_INFO: "/api/user_info"
-
-
-    # AUTHORIZE: "http://192.168.199.27"
-    # AUTHORIZE: "http://192.168.200.218:3001/"
-    # TOKEN: "http://192.168.199.27:8000/api/oauth/token"
-    # TOKEN_INFO: "http://192.168.199.27:8000/api/oauth/token_info"
-    # USER_INFO: "http://192.168.199.27:8000/api/user_info"
+oauth:
+  callback: /oauth/callback
+  providers:
+    google:
+      scopes: 
+      - https://www.googleapis.com/auth/userinfo.email
+      - openid
+      urls:
+        code: https://accounts.google.com/o/oauth2/v2/auth
+        token: https://oauth2.googleapis.com/token
+        public_keys: https://www.googleapis.com/oauth2/v3/certs
 
 
 #############################################
 #                LOGGING                    #
 #############################################
 ERROR_LOG_FILENAME: "oauth_client_lib.log"
-
-
-#############################################
-#                  VARS                     #
-#############################################
-SCOPE: "username email"
-STATE_LENGTH: 5
-
-
-###############################################
-#                    SECRETS                  #
-###############################################
-ALGORITHM: "HS256"
-LOGIN_TOKEN_EXPIRE_MINUTES: 1800
 
 

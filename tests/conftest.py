@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 import time
+import json
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,9 @@ from sqlalchemy.orm import sessionmaker, clear_mappers
 from oauth_client_lib.service_layer.oauth_provider import OAuthProvider
 from oauth_client_lib.adapters.orm import mapper_registry, start_mappers
 from oauth_client_lib import config
+from oauth_client_lib.adapters import repository
+from oauth_client_lib.service_layer import unit_of_work
+
 
 metadata = mapper_registry.metadata
 
@@ -84,46 +88,100 @@ def restart_api():
 
 
 class FakeOAuthProvider(OAuthProvider):
-    pass
-#     """Фейковый сервис авторизации для тестирования
+    """Фейковый сервис авторизации для тестирования
 
-#     Посылаем ему запросы, он должен что-нибудь ответить"""
-#     def __init__(self, service_url) -> None:
-#         self.service_url = service_url
-#         self.endpoint = None
-#         self.data = None
+    Посылаем ему запросы, он должен что-нибудь ответить"""
+    def __init__(
+        self,
+        name,
+        code_url,
+        scopes,
+        token_url,
+        public_keys_url,
+        client_id,
+        client_secret
+    ) -> None:
+        self.endpoint = None
+        self.data = None
+        super().__init__(
+            name=name,
+            code_url=code_url,
+            scopes=scopes,
+            token_url=token_url,
+            public_keys_url=public_keys_url,
+            client_id=client_id,
+            client_secret=client_secret
+        )
 
-#     def _post(self, endpoint, data):
-#         self.endpoint = endpoint
-#         self.data = data
-#         self.status_code = 200
-#         self.json_data = {
-#             "access_token": f"test_access_token_for_grant_{data.get('code', data.get('refresh_token'))}",
-#             "refresh_token": "test_refresh_token", 
-#         }
-#         time.sleep(0.5)
-#         # к токену добавить код гранта, чтобы токены отличать друг от друга
-#         # либо code, либо refresh_token - что есть, то и добавить
-#         return self
-    
+    async def _post(self, url, data):
+        time.sleep(0.5)
+        self.data = data
+        self.response = requests.Response()
+        self.response.status_code = 200
+        json_content = {
+            "access_token": f"test_access_token_for_grant_{data.get('code', data.get('refresh_token'))}",
+            "refresh_token": "test_refresh_token"
+        }
+        self.response._content = json.dumps(json_content).encode('utf-8')
+        return self.response
 
-#     @property
-#     def _url(self):
-#         return f"{self.service_url}{self.endpoint}"
-
-# @pytest.fixture
-# def fake_oauth_provider():
-#     return FakeOAuthProvider()
 
 @pytest.fixture
 def test_provider():
-    return OAuthProvider(
-            name='test_name',
+    return FakeOAuthProvider(
+            name='test_oauth_provider',
             code_url='https://accounts.test.com/o/oauth2/v2/auth',
             scopes=[
                 'https://www.testapis.com/auth/userinfo.email',
                 'openid'
             ],
             token_url='https://oauth2.testapis.com/token',
-            public_keys_url='https://www.testapis.com/oauth2/v3/certs'
+            public_keys_url='https://www.testapis.com/oauth2/v3/certs',
+            client_id='test_client_id',
+            client_secret='test_client_secret'
         )
+
+
+class FakeRepository(repository.AbstractRepository):
+    def __init__(self, authorizations):
+        super().__init__()
+        self._authorizations = set(authorizations)
+
+    def _add(self, authorization):
+        self._authorizations.add(authorization)
+
+    def _get_by_state(self, state):
+        return next(
+            (a for a in self._authorizations if state == a.state.state), None
+        )
+
+    def _get_by_grant_code(self, code):
+        return next(
+            (a for a in self._authorizations
+                for grant in a.grants if code == grant.code),
+            None
+        )
+
+    def _get_by_token(self, access_token):
+        return next(
+            (a for a in self._authorizations
+                for token in a.tokens if access_token == token.access_token),
+            None
+        )
+
+
+class FakeUnitOfWork(unit_of_work.AbstractUnitOfWork):
+    def __init__(self):
+        self.authorizations = FakeRepository([])
+        self.committed = False
+
+    def _commit(self):
+        self.committed = True
+
+    def rollback(self):
+        pass
+
+
+@pytest.fixture
+def uow():
+    return FakeUnitOfWork()

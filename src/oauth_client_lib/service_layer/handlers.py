@@ -11,7 +11,7 @@ from .. import config
 from . import oauth_provider
 
 
-def create_authorization(
+async def create_authorization(
     cmd: commands.CreateAuthorization,
     uow: AbstractUnitOfWork
 ) -> str:
@@ -20,10 +20,10 @@ def create_authorization(
         auth = model.Authorization(state=state)
         uow.authorizations.add(auth)
         uow.commit()
-        return state.code
+        return state.state
 
 
-def process_grant_recieved(
+async def process_grant_recieved(
     cmd: commands.ProcessGrantRecieved,
     uow: AbstractUnitOfWork
 ):
@@ -48,7 +48,7 @@ def process_grant_recieved(
         uow.commit()
 
 
-def request_token(
+async def request_token(
     cmd: commands.RequestToken,
     uow: AbstractUnitOfWork
 ):
@@ -68,13 +68,18 @@ def request_token(
         if old_token:
             old_token.deactivate()
 
-        # oauth = oauth_provider.OAuthProvider(service_url=)
-        token_requester = uow.get_token_requester()
-        data = token_requester.prepare_tokenRequest_data(old_grant)
-        token_requester.post(config.get_oauth_token_endpoint_uri(), data)
-
-        new_token = token_requester.get_token()
-        new_grant = token_requester.get_grant()
+        oauth = cmd.oauth
+        if not oauth:
+            scopes, urls = config.get_oauth_params(auth.provider_name)
+            oauth = oauth_provider.OAuthProvider(
+                scopes=scopes,
+                code_url=urls['code'],
+                token_url=urls['token'],
+                public_keys_url=urls['keys']
+            )
+        await oauth.request_token(grant=old_grant)
+        new_token = oauth.get_token()
+        new_grant = oauth.get_grant()
         auth.tokens.append(new_token)
         auth.grants.append(new_grant)
         uow.commit()

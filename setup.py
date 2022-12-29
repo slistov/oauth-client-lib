@@ -1,6 +1,6 @@
 from setuptools import setup
 
-with open("README.md") as file:
+with open("README.md", encoding='utf8') as file:
     read_me_description = file.read()
 
 setup(
@@ -16,6 +16,7 @@ setup(
     packages=['oauth_client_lib'],
     install_requires=[
         'pytest',
+        'pytest-asyncio',
         'sqlalchemy',
         'fastapi[all]==0.82.0',
         'requests==2.28.1',

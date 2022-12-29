@@ -2,8 +2,7 @@
 """
 
 # pylint: disable=too-few-public-methods
-from datetime import date
-from typing import Optional
+from typing import Any
 from dataclasses import dataclass
 
 
@@ -51,16 +50,8 @@ class ProcessGrantRecieved(Command):
     code: str
 
 
-
-# @dataclass
-# class ProcessTokenRecieved(Command):
-#     """Обработать полученный токен доступа
-#     """
-#     grant_code: str
-#     access_token: str
-
-
 @dataclass
 class RequestToken(Command):
     """Запросить токен по гранту"""
     grant_code: str
+    oauth: Any = None
